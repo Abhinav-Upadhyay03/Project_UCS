@@ -1,0 +1,25 @@
+Shapes:
+
+Line - 
+Boundary Condition -
+    Initial X
+    Final X
+Time 
+Diffusivity
+
+Square - 
+Boundary Condition - 
+    Top 
+    Buttom
+    Right
+    Left
+Initial Condition
+Time
+Diffusivity
+
+Circle-
+Boundary Condition -
+    Diameter
+Initial Condition
+Time Diffusivity
+
