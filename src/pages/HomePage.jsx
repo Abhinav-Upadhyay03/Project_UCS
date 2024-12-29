@@ -1,6 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
+import { use } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const HomePage = () => {
+  const api = axios.create({
+    baseURL: "http://127.0.0.1:5000",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    withCredentials: true,
+  });
+
   const [selectedShape, setSelectedShape] = useState("");
   const [boundaryCondition, setBoundaryCondition] = useState({
     top: "",
@@ -18,7 +29,7 @@ const HomePage = () => {
   });
 
   const canvasRef = useRef(null);
-
+  const navigate = useNavigate();
   const drawShape = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -46,19 +57,14 @@ const HomePage = () => {
       if (!isNaN(top) && !isNaN(left) && !isNaN(right) && !isNaN(bottom)) {
         const height = Math.abs(top - bottom);
         const width = Math.abs(right - left);
-        
+
         // Calculate center position
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        
+
         // Draw rectangle centered on canvas
         ctx.beginPath();
-        ctx.rect(
-          centerX - width / 2,
-          centerY - height / 2,
-          width,
-          height
-        );
+        ctx.rect(centerX - width / 2, centerY - height / 2, width, height);
         ctx.strokeStyle = "black";
         ctx.stroke();
       }
@@ -74,6 +80,76 @@ const HomePage = () => {
     }
   };
 
+  const submitShape = async (e) => {
+    e.preventDefault();
+    try {
+      // console.log("Submitting shape");
+      let endpoint = "";
+      let data = {
+        time: dimensions.time,
+        diffusivity: dimensions.diffusivity,
+        initialCondition: initialCondition,
+      };
+
+      switch (selectedShape) {
+        case "line":
+          endpoint = "/api/line/";
+          data = {
+            ...data,
+            initialX: dimensions.initialX,
+            finalX: dimensions.finalX,
+          };
+          break;
+        case "square":
+          endpoint = "/api/square/";
+          data = {
+            ...data,
+            top: boundaryCondition.top,
+            bottom: boundaryCondition.bottom,
+            left: boundaryCondition.left,
+            right: boundaryCondition.right,
+          };
+          break;
+        case "circle":
+          endpoint = "/api/circle/";
+          data = {
+            ...data,
+            diameter: dimensions.diameter,
+          };
+          break;
+        default:
+          throw new Error("Invalid shape selected");
+      }
+
+      try {
+        const response = await api.post(endpoint, data);
+        console.log("Response:", response.data);
+
+        // Navigate to result page with all data
+        navigate("/result", {
+          state: {
+            inputData: data,
+            result: response.data.result,
+          },
+        });
+      } catch (error) {
+        if (error.response) {
+          console.error("Error data:", error.response.data);
+          console.error("Error status:", error.response.status);
+        } else if (error.request) {
+          console.error("No response received:", error.request);
+        } else {
+          console.error("Error message:", error.message);
+        }
+        alert(
+          "An error occurred while processing your request. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred. Please check your inputs and try again.");
+    }
+  };
   useEffect(() => {
     if (selectedShape) {
       drawShape();
@@ -102,7 +178,9 @@ const HomePage = () => {
             <input
               type="number"
               value={dimensions.time}
-              onChange={(e) => setDimensions(prev => ({ ...prev, time: e.target.value }))}
+              onChange={(e) =>
+                setDimensions((prev) => ({ ...prev, time: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -113,7 +191,12 @@ const HomePage = () => {
             <input
               type="number"
               value={dimensions.diffusivity}
-              onChange={(e) => setDimensions(prev => ({ ...prev, diffusivity: e.target.value }))}
+              onChange={(e) =>
+                setDimensions((prev) => ({
+                  ...prev,
+                  diffusivity: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -133,7 +216,12 @@ const HomePage = () => {
               <input
                 type="number"
                 value={dimensions.initialX}
-                onChange={(e) => setDimensions(prev => ({ ...prev, initialX: e.target.value }))}
+                onChange={(e) =>
+                  setDimensions((prev) => ({
+                    ...prev,
+                    initialX: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -144,7 +232,9 @@ const HomePage = () => {
               <input
                 type="number"
                 value={dimensions.finalX}
-                onChange={(e) => setDimensions(prev => ({ ...prev, finalX: e.target.value }))}
+                onChange={(e) =>
+                  setDimensions((prev) => ({ ...prev, finalX: e.target.value }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -166,7 +256,12 @@ const HomePage = () => {
               <input
                 type="number"
                 value={boundaryCondition.top}
-                onChange={(e) => setBoundaryCondition(prev => ({ ...prev, top: e.target.value }))}
+                onChange={(e) =>
+                  setBoundaryCondition((prev) => ({
+                    ...prev,
+                    top: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -177,7 +272,12 @@ const HomePage = () => {
               <input
                 type="number"
                 value={boundaryCondition.bottom}
-                onChange={(e) => setBoundaryCondition(prev => ({ ...prev, bottom: e.target.value }))}
+                onChange={(e) =>
+                  setBoundaryCondition((prev) => ({
+                    ...prev,
+                    bottom: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -188,7 +288,12 @@ const HomePage = () => {
               <input
                 type="number"
                 value={boundaryCondition.left}
-                onChange={(e) => setBoundaryCondition(prev => ({ ...prev, left: e.target.value }))}
+                onChange={(e) =>
+                  setBoundaryCondition((prev) => ({
+                    ...prev,
+                    left: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -199,7 +304,12 @@ const HomePage = () => {
               <input
                 type="number"
                 value={boundaryCondition.right}
-                onChange={(e) => setBoundaryCondition(prev => ({ ...prev, right: e.target.value }))}
+                onChange={(e) =>
+                  setBoundaryCondition((prev) => ({
+                    ...prev,
+                    right: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -220,7 +330,9 @@ const HomePage = () => {
             <input
               type="number"
               value={dimensions.diameter}
-              onChange={(e) => setDimensions(prev => ({ ...prev, diameter: e.target.value }))}
+              onChange={(e) =>
+                setDimensions((prev) => ({ ...prev, diameter: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -235,10 +347,12 @@ const HomePage = () => {
   return (
     <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Shape Configuration</h2>
+        <h2 className="text-2xl font-bold text-gray-800">
+          Shape Configuration
+        </h2>
       </div>
 
-      <form className="space-y-6">
+      <form className="space-y-6" onSubmit={submitShape}>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
             Select Shape
@@ -278,16 +392,21 @@ const HomePage = () => {
         </div>
 
         {renderShapeInputs()}
-      </form>
 
-      <div className="mt-6">
-        <canvas
-          ref={canvasRef}
-          width="500"
-          height="300"
-          className="border border-gray-300"
-        ></canvas>
-      </div>
+        <div className="mt-6">
+          <canvas
+            ref={canvasRef}
+            className="border border-gray-300 w-full h-full"
+          ></canvas>
+        </div>
+        <button
+          type="submit"
+          disabled={!selectedShape}
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          Submit
+        </button>
+      </form>
     </div>
   );
 };
