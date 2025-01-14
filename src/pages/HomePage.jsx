@@ -1,17 +1,8 @@
-import { use } from "react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "../config/api";
 
 const HomePage = () => {
-  const api = axios.create({
-    baseURL: "http://127.0.0.1:5000",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    withCredentials: true,
-  });
-
   const [selectedShape, setSelectedShape] = useState("");
   const [boundaryCondition, setBoundaryCondition] = useState({
     top: "",
@@ -26,10 +17,13 @@ const HomePage = () => {
     time: "",
     diffusivity: "",
     diameter: "",
+    boundaryCondition_left: "",
+    boundaryCondition_right: "",
   });
 
   const canvasRef = useRef(null);
   const navigate = useNavigate();
+
   const drawShape = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -58,11 +52,9 @@ const HomePage = () => {
         const height = Math.abs(top - bottom);
         const width = Math.abs(right - left);
 
-        // Calculate center position
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        // Draw rectangle centered on canvas
         ctx.beginPath();
         ctx.rect(centerX - width / 2, centerY - height / 2, width, height);
         ctx.strokeStyle = "black";
@@ -83,7 +75,6 @@ const HomePage = () => {
   const submitShape = async (e) => {
     e.preventDefault();
     try {
-      // console.log("Submitting shape");
       let endpoint = "";
       let data = {
         time: dimensions.time,
@@ -98,6 +89,8 @@ const HomePage = () => {
             ...data,
             initialX: dimensions.initialX,
             finalX: dimensions.finalX,
+            boundaryCondition_left: dimensions.boundaryCondition_left,
+            boundaryCondition_right: dimensions.boundaryCondition_right,
           };
           break;
         case "square":
@@ -125,11 +118,10 @@ const HomePage = () => {
         const response = await api.post(endpoint, data);
         console.log("Response:", response.data);
 
-        // Navigate to result page with all data
         navigate("/result", {
           state: {
             inputData: data,
-            result: response.data.result,
+            result: response.data,
           },
         });
       } catch (error) {
@@ -150,6 +142,7 @@ const HomePage = () => {
       alert("An error occurred. Please check your inputs and try again.");
     }
   };
+
   useEffect(() => {
     if (selectedShape) {
       drawShape();
@@ -170,7 +163,7 @@ const HomePage = () => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-2 gap-4"> */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Time
@@ -184,7 +177,7 @@ const HomePage = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Diffusivity
             </label>
@@ -199,15 +192,15 @@ const HomePage = () => {
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
       </>
     );
 
     if (selectedShape === "line") {
       return (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Boundary Conditions</h3>
+          <h3 className="text-lg font-semibold">Line Configuration</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -234,6 +227,38 @@ const HomePage = () => {
                 value={dimensions.finalX}
                 onChange={(e) =>
                   setDimensions((prev) => ({ ...prev, finalX: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Left Boundary
+              </label>
+              <input
+                type="number"
+                value={dimensions.boundaryCondition_left}
+                onChange={(e) =>
+                  setDimensions((prev) => ({
+                    ...prev,
+                    boundaryCondition_left: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Right Boundary
+              </label>
+              <input
+                type="number"
+                value={dimensions.boundaryCondition_right}
+                onChange={(e) =>
+                  setDimensions((prev) => ({
+                    ...prev,
+                    boundaryCondition_right: e.target.value,
+                  }))
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -347,9 +372,7 @@ const HomePage = () => {
   return (
     <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
-          Shape Configuration
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-800">Shape Configuration</h2>
       </div>
 
       <form className="space-y-6" onSubmit={submitShape}>
@@ -396,9 +419,12 @@ const HomePage = () => {
         <div className="mt-6">
           <canvas
             ref={canvasRef}
-            className="border border-gray-300 w-full h-full"
-          ></canvas>
+            width={400}
+            height={300}
+            className="border border-gray-300 w-full"
+          />
         </div>
+
         <button
           type="submit"
           disabled={!selectedShape}
