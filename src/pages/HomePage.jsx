@@ -15,7 +15,7 @@ const HomePage = () => {
     initialX: "",
     finalX: "",
     time: "",
-    diffusivity: "",
+    // diffusivity: "",
     diameter: "",
     boundaryCondition_left: "",
     boundaryCondition_right: "",
@@ -78,7 +78,7 @@ const HomePage = () => {
       let endpoint = "";
       let data = {
         time: dimensions.time,
-        diffusivity: dimensions.diffusivity,
+        // diffusivity: dimensions.diffusivity,
         initialCondition: initialCondition,
       };
 
